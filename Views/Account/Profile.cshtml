@@ -1,0 +1,40 @@
+﻿@model Messenger_App.ViewModels.Account.ProfileVM
+@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+
+<h2 class="mb-4 text-center">@ViewData["Title"]</h2>
+
+@if (ViewBag.Success != null)
+{
+    <div class="alert alert-success text-center">@ViewBag.Success</div>
+}
+@if (TempData["PwdChanged"] != null)
+{
+    <div class="alert alert-success text-center">Đổi mật khẩu thành công</div>
+}
+
+<form asp-action="Profile" method="post" class="mx-auto" style="max-width:450px">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control">
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Phone" class="form-label"></label>
+        <input asp-for="Phone" class="form-control">
+        <span asp-validation-for="Phone" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="StatusMessage" class="form-label"></label>
+        <textarea asp-for="StatusMessage" rows="3" class="form-control"></textarea>
+        <span asp-validation-for="StatusMessage" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary">Lưu thay đổi</button>
+    <a asp-action="ChangePassword" class="btn btn-link ms-3">Đổi mật khẩu</a>
+</form>

@@ -1,0 +1,53 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Admin\\source\\repos\\Messenger App\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{34ABCC86-1743-4D0C-8F47-25B4E58BD671}|Messenger App.csproj|c:\\users\\admin\\source\\repos\\messenger app\\wwwroot\\js\\chat.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{34ABCC86-1743-4D0C-8F47-25B4E58BD671}|Messenger App.csproj|solutionrelative:wwwroot\\js\\chat.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{34ABCC86-1743-4D0C-8F47-25B4E58BD671}|Messenger App.csproj|c:\\users\\admin\\source\\repos\\messenger app\\views\\chat\\_messagepartial.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{34ABCC86-1743-4D0C-8F47-25B4E58BD671}|Messenger App.csproj|solutionrelative:views\\chat\\_messagepartial.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "chat.js",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Messenger App\\wwwroot\\js\\chat.js",
+              "RelativeDocumentMoniker": "wwwroot\\js\\chat.js",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Messenger App\\wwwroot\\js\\chat.js",
+              "RelativeToolTip": "wwwroot\\js\\chat.js",
+              "ViewState": "AgIAACoAAAAAAAAAAAAAAEUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2025-05-04T08:35:11.799Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "_MessagePartial.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Messenger App\\Views\\Chat\\_MessagePartial.cshtml",
+              "RelativeDocumentMoniker": "Views\\Chat\\_MessagePartial.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Messenger App\\Views\\Chat\\_MessagePartial.cshtml",
+              "RelativeToolTip": "Views\\Chat\\_MessagePartial.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-04T07:07:03.044Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

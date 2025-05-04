@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - MessengerApp</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+        border-right: 1px solid #dee2e6;
+        min-height: 80vh;
+        }
+
+        .friend-list {
+        border-left: 1px solid #dee2e6;
+        min-height: 80vh;
+        }
+
+        .content {
+        padding: 1rem;
+        min-height: 80vh;
+        }
+
+        .friend-item small {
+        font-size: 0.75rem;
+        color: gray;
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
+        <div class="container">
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">MessengerApp</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-action="Profile" asp-controller="Account">@User.Identity!.Name</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-action="Logout" asp-controller="Account">Đăng xuất</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-action="Login" asp-controller="Account">Đăng nhập</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 3 CỘT: SIDEBAR - CONTENT - FRIENDS -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- LEFT SIDEBAR -->
+            <div class="col-md-2 sidebar bg-light pt-3">
+                @if (User.Identity?.IsAuthenticated ?? true)
+                {
+                    <h6 class="text-muted">Chức năng</h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Account" asp-action="Profile">Thông tin cá nhân</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Friend" asp-action="Index">Bạn bè</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Chat" asp-action="Index">Tin nhắn</a>
+                        </li>
+                    </ul>
+                }
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div class="col-md-8 content">
+                @RenderBody()
+            </div>
+
+            <!-- RIGHT SIDEBAR -->
+            <div class="col-md-2 friend-list bg-light pt-3">
+                @if (User.Identity?.IsAuthenticated ?? true)
+                {
+                @await Component.InvokeAsync("FriendOnlineList")
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="~/js/chat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@3.2.13/jquery.validate.unobtrusive.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,19 @@
+﻿@model List<MessengerApp.ViewComponents.FriendOnlineListViewComponent.FriendDto>
+
+<h6 class="text-muted">Bạn bè online</h6>
+@if (!Model.Any())
+{
+    <p class="text-muted">Chưa có bạn bè</p>
+}
+else
+{
+    <ul class="list-unstyled">
+        @foreach (var friend in Model)
+        {
+            <li class="friend-item mb-2">
+                <strong>@friend.Username</strong><br />
+                <small>@(friend.LastActive?.ToLocalTime().ToString("HH:mm dd/MM/yyyy") ?? "Không rõ")</small>
+            </li>
+        }
+    </ul>
+}

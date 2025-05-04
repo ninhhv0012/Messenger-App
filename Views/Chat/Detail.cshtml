@@ -1,0 +1,35 @@
+﻿@model List<Messenger_App.Models.MessageDTO>
+@{
+    var chatId = ViewData["ChatId"];
+    var currentUserId = (int)ViewData["CurrentUserId"];
+    ViewData["Title"] = $"Chat {chatId}";
+}
+<input type="hidden" id="chatId" value="@chatId" />
+
+<div id="detailContainer" style="height:400px;overflow:auto;">
+    <div id="messageList">
+        @if (!Model.Any())
+        {
+            <p class="text-muted">Chưa có tin nhắn</p>
+        }
+        else
+        {
+            foreach (var m in Model)
+            {
+                var align = m.SenderId == currentUserId ? "justify-content-end" : "justify-content-start";
+                <div class="d-flex @align mb-2">
+                    <div class="p-2 rounded bg-light" style="max-width:70%;">
+                        <div><small><strong>@m.SenderUsername</strong></small></div>
+                        <div>@m.Content</div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+<textarea id="txtMessage" class="form-control mt-2" placeholder="Nhập tin nhắn..."></textarea>
+<button id="btnSend" class="btn btn-primary mt-2" disabled>Gửi</button>
+<input type="file" id="fileInput" class="form-control mt-2" />
+@section Scripts {
+ 
+}

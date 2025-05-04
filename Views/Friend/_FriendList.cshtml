@@ -1,0 +1,26 @@
+﻿@model List<Messenger_App.ViewModels.FriendItemVM>
+@if (!Model.Any())
+{
+    <p class="text-muted">Bạn chưa có bạn bè.</p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr><th>Username</th><th>Lần hoạt động</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var f in Model)
+            {
+                <tr>
+                    <td>@f.Username</td>
+                    <td>@(f.LastActive?.ToLocalTime().ToString("HH:mm dd/MM") ?? "-")</td>
+                    <td class="text-end">
+                        <!--<a class="btn btn-sm btn-primary disabled">Nhắn tin</a>-->
+                        <button class="btn btn-sm btn-danger js-remove" data-id="@f.UserId">Xoá</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

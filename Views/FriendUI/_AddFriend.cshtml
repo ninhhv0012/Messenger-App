@@ -1,0 +1,38 @@
+﻿<div class="input-group mb-3">
+    <input type="text" id="txtSearch" class="form-control" placeholder="Nhập username..." />
+    <button class="btn btn-outline-secondary" id="btnSearch">Tìm</button>
+</div>
+
+<div id="searchResult"></div>
+
+<script>
+    $('#btnSearch').on('click', doSearch);
+    $('#txtSearch').on('keypress', e => { if (e.which===13) doSearch(); });
+
+    function doSearch(){
+        const term = $('#txtSearch').val();
+        if(!term.trim()) return;
+        $('#searchResult').html('<p class="text-muted">Đang tìm...</p>');
+        $.get('@Url.Action("Search", "Friend")', {term})
+            .done(res=>{
+                if(!res.length) $('#searchResult').html('<p class="text-danger">Không tìm thấy</p>');
+                else{
+                    let html='';
+                    res.forEach(u=>{
+                        html += `<div class="d-flex justify-content-between border-bottom py-2">
+                                    <span>${u.username}</span>
+                                    <button class="btn btn-sm btn-primary js-invite" data-id="${u.userId}">Mời kết bạn</button>
+                                 </div>`;
+                    });
+                    $('#searchResult').html(html);
+                }
+            });
+    }
+
+    // gửi request
+    $('#searchResult').on('click','.js-invite',function(){
+        const id=$(this).data('id');
+        $.post('@Url.Action("Invite", "Friend")',{id})
+          .done(()=>$(this).replaceWith('<span class="text-success">Đã gửi</span>'));
+    });
+</script>

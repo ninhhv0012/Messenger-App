@@ -1,0 +1,25 @@
+﻿@model List<Messenger_App.Models.MessageDTO>
+@{
+    var currentUserId = (int)ViewData["CurrentUserId"];
+}
+@foreach (var m in Model)
+{
+    var align = m.SenderId == currentUserId ? "justify-content-end" : "justify-content-start";
+    <div class="d-flex @align mb-2 msg-item" data-timestamp="@m.Timestamp">
+        <div class="p-2 rounded bg-light" style="max-width:70%;">
+            <div><small><strong>@m.SenderUsername</strong></small></div>
+            @if (m.MessageType == "Image" && !string.IsNullOrEmpty(m.FilePath))
+            {
+                <img src="@m.FilePath" alt="Image" class="img-fluid" />
+            }
+            else if (m.MessageType == "File" && !string.IsNullOrEmpty(m.FilePath))
+            {
+                <a href="@m.FilePath" download>@System.IO.Path.GetFileName(m.FilePath)</a>
+            }
+            else
+            {
+                <div>@m.Content</div>
+            }
+        </div>
+    </div>
+}

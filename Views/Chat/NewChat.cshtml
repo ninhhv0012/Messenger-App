@@ -1,0 +1,76 @@
+﻿@model Messenger_App.ViewModels.NewChatVM
+@{
+    ViewData["Title"] = "Tin nhắn mới";
+}
+
+<div class="btn-group mb-3" role="group">
+    <button id="personalBtn" class="btn btn-outline-primary">Cá nhân</button>
+    <button id="groupBtn" class="btn btn-outline-secondary">Nhóm</button>
+</div>
+
+<!-- Cá nhân -->
+<div id="personalDiv">
+    <h5>Danh sách bạn bè</h5>
+    @if (!Model.Friends.Any())
+    {
+        <p class="text-muted">Bạn chưa có bạn bè.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var f in Model.Friends)
+            {
+                <li class="list-group-item">
+                    <a asp-action="NewChat" asp-route-otherUserId="@f.UserId">@f.Username</a>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<!-- Nhóm -->
+<div id="groupDiv" style="display:none;">
+    <form asp-action="NewChat" method="post">
+        <input type="hidden" asp-for="IsGroup" value="true" />
+        <div class="mb-3">
+            <label asp-for="GroupName" class="form-label"></label>
+            <input asp-for="GroupName" class="form-control" />
+            <span asp-validation-for="GroupName" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Chọn thành viên</label>
+            @if (!Model.Friends.Any())
+            {
+                <p class="text-muted">Bạn chưa có bạn bè để thêm.</p>
+            }
+            else
+            {
+                <div class="form-check">
+                    @foreach (var f in Model.Friends)
+                    {
+                        <div>
+                            <input class="form-check-input" type="checkbox" name="MemberIds" value="@f.UserId" id="f@f.UserId" />
+                            <label class="form-check-label" for="f@f.UserId">@f.Username</label>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <button type="submit" class="btn btn-primary">Tạo nhóm</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $('#personalBtn').click(function () {
+            $('#groupDiv').hide(); $('#personalDiv').show();
+            $('#personalBtn').addClass('btn-primary').removeClass('btn-outline-primary');
+            $('#groupBtn').addClass('btn-outline-secondary').removeClass('btn-secondary');
+        });
+        $('#groupBtn').click(function () {
+            $('#personalDiv').hide(); $('#groupDiv').show();
+            $('#groupBtn').addClass('btn-secondary').removeClass('btn-outline-secondary');
+            $('#personalBtn').addClass('btn-outline-primary').removeClass('btn-primary');
+        });
+    </script>
+}

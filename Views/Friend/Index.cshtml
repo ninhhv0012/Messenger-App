@@ -1,0 +1,77 @@
+﻿@{
+    ViewData["Title"] = "Quản lý bạn bè";
+}
+
+<h2 class="mb-4">Quản lý bạn bè</h2>
+
+<!-- Tabs điều hướng -->
+<ul class="nav nav-tabs mb-3" id="friendTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-type="list" data-bs-toggle="tab" type="button" role="tab">Danh sách bạn bè</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-type="requests" data-bs-toggle="tab" type="button" role="tab">Lời mời kết bạn</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-type="add" data-bs-toggle="tab" type="button" role="tab">Thêm bạn bè</button>
+    </li>
+</ul>
+
+<!-- Nội dung động sẽ được load vào đây -->
+<div id="tabContent" class="border p-3 bg-white shadow-sm">
+    <div class="text-center text-muted">Đang tải nội dung...</div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            // Khi page load lần đầu → load tab mặc định
+            loadTab('list');
+
+            // Khi chuyển tab
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                const type = $(e.target).data('type');
+                loadTab(type);
+            });
+
+            // Load nội dung tab
+            function loadTab(type) {
+                $("#tabContent").html('<div class="text-center text-muted">Đang tải...</div>');
+                switch (type) {
+                    case 'list':
+                        $("#tabContent").load('@Url.Action("List", "Friend")');
+                        break;
+                    case 'requests':
+                        $("#tabContent").load('@Url.Action("Requests", "Friend")');
+                        break;
+                    case 'add':
+                        $("#tabContent").load('@Url.Action("AddPartial", "FriendUI")');
+                        break;
+                }
+            }
+
+            // Xử lý các nút thao tác trong danh sách
+            $("#tabContent").on('click', '.js-remove', function () {
+                const id = $(this).data('id');
+				console.log(id);
+
+                if (confirm("Bạn có chắc chắn muốn xoá bạn này không?")) {
+                    $.post('@Url.Action("Remove", "Friend")', { friendUserId: id })
+                        .done(() => loadTab('list'));
+                }
+            });
+
+            $("#tabContent").on('click', '.js-accept', function () {
+                const id = $(this).data('id');
+                $.post('@Url.Action("Accept", "Friend")', { userId: id })
+                    .done(() => loadTab('requests'));
+            });
+
+            $("#tabContent").on('click', '.js-decline', function () {
+                const id = $(this).data('id');
+                $.post('@Url.Action("Decline", "Friend")', { userId: id })
+                    .done(() => loadTab('requests'));
+            });
+        });
+    </script>
+}
