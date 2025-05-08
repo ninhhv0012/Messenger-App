@@ -1,25 +1,42 @@
 ﻿@model List<Messenger_App.Models.MessageDTO>
 @{
     var currentUserId = (int)ViewData["CurrentUserId"];
+    var chatType = ViewData["ChatType"]?.ToString() ?? "Personal";
 }
 @foreach (var m in Model)
 {
-    var align = m.SenderId == currentUserId ? "justify-content-end" : "justify-content-start";
-    <div class="d-flex @align mb-2 msg-item" data-timestamp="@m.Timestamp">
-        <div class="p-2 rounded bg-light" style="max-width:70%;">
-            <div><small><strong>@m.SenderUsername</strong></small></div>
-            @if (m.MessageType == "Image" && !string.IsNullOrEmpty(m.FilePath))
-            {
-                <img src="@m.FilePath" alt="Image" class="img-fluid" />
-            }
-            else if (m.MessageType == "File" && !string.IsNullOrEmpty(m.FilePath))
-            {
-                <a href="@m.FilePath" download>@System.IO.Path.GetFileName(m.FilePath)</a>
-            }
-            else
-            {
-                <div>@m.Content</div>
-            }
+    if (m.MessageType == "System")
+    {
+        <div class="d-flex justify-content-center my-3 msg-item" data-timestamp="@m.Timestamp.ToString("o")" data-sender-id="@m.SenderId">
+            <div class="system-message p-3 rounded" style="max-width: 80%; border-left: 3px solid #007bff; background-color: #f8f9fa; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: left;">
+                @Html.Raw(m.Content.Replace("\n", "<br>"))
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        var align = m.SenderId == currentUserId ? "justify-content-end" : "justify-content-start";
+        var bgClass = m.SenderId == currentUserId ? "bg-primary text-white" : "bg-light";
+
+        <div class="d-flex @align mb-2 msg-item" data-timestamp="@m.Timestamp.ToString("o")" data-sender-id="@m.SenderId">
+            <div class="p-2 rounded @bgClass" style="max-width:70%;">
+                @if (chatType == "Group" && m.SenderId != currentUserId)
+                {
+                    <div><small><strong>@m.SenderUsername</strong></small></div>
+                }
+                @if (m.MessageType == "Image" && !string.IsNullOrEmpty(m.FilePath))
+                {
+                    <img src="@m.FilePath" alt="Image" class="img-fluid" />
+                }
+                else if (m.MessageType == "File" && !string.IsNullOrEmpty(m.FilePath))
+                {
+                    <a href="@m.FilePath" download>@System.IO.Path.GetFileName(m.FilePath)</a>
+                }
+                else
+                {
+                    <div>@m.Content</div>
+                }
+            </div>
+        </div>
+    }
 }

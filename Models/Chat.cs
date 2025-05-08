@@ -16,5 +16,8 @@ namespace Messenger_App.Models
         public ICollection<ChatParticipant> ChatParticipants { get; set; } = new List<ChatParticipant>();
         public ICollection<Message> Messages { get; set; } = new List<Message>();
 
+        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
+
     }
 }

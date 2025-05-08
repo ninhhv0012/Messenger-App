@@ -87,7 +87,7 @@ LIMIT @l;
                 SenderId = rdr.IsDBNull(2) ? null : rdr.GetInt32(2),
                 SenderUsername = rdr.GetString(3),
                 Content = rdr.GetString(4),
-                MessageType = rdr.GetString(5),
+                MessageType = rdr.GetString(5),  // Lấy loại tin nhắn
                 Timestamp = rdr.GetDateTime(6),
                 FilePath = rdr.IsDBNull(7) ? null : rdr.GetString(7)
             });
@@ -97,17 +97,31 @@ LIMIT @l;
         return list;
     }
 
-    public async Task SendMessageAsync(int chatId, int userId, string content)
+    public async Task SendMessageAsync(int chatId, int userId, string content, string messageType = "Text")
     {
-        const string sql = @"
+        Console.WriteLine($"ChatService.SendMessageAsync: chatId={chatId}, userId={userId}, messageType={messageType}");
+
+        try
+        {
+            const string sql = @"
 INSERT INTO messages(chat_id, sender_id, content, message_type, timestamp)
-VALUES(@c, @u, @m, 'Text', now());";
-        await using var conn = Conn(); await conn.OpenAsync();
-        await using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("c", chatId);
-        cmd.Parameters.AddWithValue("u", userId);
-        cmd.Parameters.AddWithValue("m", content);
-        await cmd.ExecuteNonQueryAsync();
+VALUES(@c, @u, @m, @t, now());";
+            await using var conn = Conn(); await conn.OpenAsync();
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("c", chatId);
+            cmd.Parameters.AddWithValue("u", userId);
+            cmd.Parameters.AddWithValue("m", content);
+            cmd.Parameters.AddWithValue("t", messageType);
+
+            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+            Console.WriteLine($"ChatService.SendMessageAsync: {rowsAffected} rows inserted");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in ChatService.SendMessageAsync: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            throw; // Rethrow để caller có thể xử lý
+        }
     }
 
     public async Task<string> UploadFileAsync(int chatId, int senderId, IFormFile file)

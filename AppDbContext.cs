@@ -151,7 +151,26 @@ namespace Messenger_App
             b.Entity<MessageReadStatus>().ToTable("message_read_status").HasKey(rs => new { rs.MessageId, rs.UserId });
             b.Entity<Document>().ToTable("files").HasKey(f => f.FileId);
             b.Entity<Notification>().ToTable("notifications").HasKey(n => n.NotificationId);
-            b.Entity<Reminder>().ToTable("reminders").HasKey(r => r.ReminderId);
+            b.Entity<Reminder>(e =>
+            {
+                e.ToTable("reminders");
+                e.HasKey(r => r.ReminderId);
+                e.Property(r => r.ReminderId).HasColumnName("reminder_id");
+                e.Property(r => r.UserId).HasColumnName("user_id");
+                e.Property(r => r.ChatId).HasColumnName("chat_id");
+                e.Property(r => r.Title).HasColumnName("title");
+                e.Property(r => r.Description).HasColumnName("description");
+                e.Property(r => r.ReminderTime).HasColumnName("reminder_time");
+                e.Property(r => r.IsCompleted).HasColumnName("is_completed");
+                e.Property(r => r.CreatedAt).HasColumnName("created_at");
+                e.HasOne(r => r.User)
+                 .WithMany(u => u.Reminders)
+                 .HasForeignKey(r => r.UserId);
+                e.HasOne(r => r.Chat)
+                 .WithMany(c => c.Reminders)
+                 .HasForeignKey(r => r.ChatId);
+            });
+
            
             b.Entity<Message>()
             .HasOne(m => m.Sender)

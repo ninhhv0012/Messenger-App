@@ -1,4 +1,4 @@
-html {
+﻿html {
   font-size: 14px;
 }
 
@@ -19,4 +19,44 @@ html {
 
 body {
   margin-bottom: 60px;
+}
+.system-message {
+    border-left: 3px solid #007bff;
+    background-color: #f8f9fa !important;
+    color: #212529;
+    text-align: left;
+    font-size: 0.9rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+/* Thêm vào file CSS */
+#remindersList {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+#remindersList::-webkit-scrollbar {
+    width: 5px;
+}
+
+#remindersList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#remindersList::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+#remindersList::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Làm đẹp cho bảng */
+#remindersList .table {
+    margin-bottom: 0;
+}
+
+#remindersList .table td, 
+#remindersList .table th {
+    vertical-align: middle;
 }

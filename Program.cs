@@ -1,66 +1,95 @@
-﻿using Messenger_App.Models;
-using Messenger_App;
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Messenger_App;
+using Messenger_App.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Messenger_App.Hubs;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
-using Microsoft.EntityFrameworkCore.Design;
-using Messenger_App.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddTransient<ChatService>();
 
-/* ---------- DI & DbContext ---------- */
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-
-/* ---------- Auth ---------- */
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(opt =>
+// Thêm services vào container
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
     {
-        opt.LoginPath = "/Account/Login";
-        opt.LogoutPath = "/Account/Logout";
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
     });
-builder.Services.AddAuthorization();
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-/* ---------- MVC ---------- */
-builder.Services.AddControllersWithViews();
-builder.Services.AddSignalR();
+// Kết nối DB
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+// Đăng ký dịch vụ xử lý mật khẩu
+builder.Services.AddSingleton<IPasswordHasher<Messenger_App.Models.User>, PasswordHasher<Messenger_App.Models.User>>();
+
+// Đăng ký service xử lý chat
+builder.Services.AddScoped<Messenger_App.Services.ChatService>();
+
+builder.Services.AddScoped<Messenger_App.Services.ReminderService>();
+builder.Services.AddHostedService<Messenger_App.Services.ReminderBackgroundService>();
 
 
+// Thêm CORS để cho phép kết nối từ các nguồn khác
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SignalRPolicy", builder =>
+    {
+        builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+        // Không sử dụng AllowCredentials() với AllowAnyOrigin()
+    });
+});
 
 
+// Thêm SignalR với tùy chọn cấu hình chi tiết
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+    options.MaximumReceiveMessageSize = 128 * 1024; // 128 KB
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+});
+
+// Cấu hình xác thực Cookie
+builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
+    {
+        options.Cookie.Name = "Messenger.Auth";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    });
 
 var app = builder.Build();
 
-/* ---------- Seed Roles (mẫu) ---------- */
-using (var scope = app.Services.CreateScope())
+// Cấu hình HTTP request pipeline
+if (!app.Environment.IsDevelopment())
 {
-    var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (!ctx.Roles.Any())
-    {
-        ctx.Roles.AddRange(new Role { RoleName = "Admin" },
-                           new Role { RoleName = "User" });
-        ctx.SaveChanges();
-    }
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
 }
 
-/* ---------- Middleware ---------- */
-if (!app.Environment.IsDevelopment()) app.UseExceptionHandler("/Home/Error");
-
+app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
+// Kích hoạt CORS trước xác thực và phân quyền
+app.UseCors("SignalRPolicy");
+
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-/* ---------- End‑point ---------- */
+// Cấu hình EndPoints
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-// Map SignalR hub
+
+// Cấu hình SignalR hub
 app.MapHub<ChatHub>("/chathub");
 
 app.Run();
