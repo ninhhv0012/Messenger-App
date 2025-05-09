@@ -35,6 +35,7 @@
     // Thêm chức năng hiển thị thông báo trong chat (sử dụng bởi ChatReminder)
     window.ChatCore = window.ChatCore || {};
     window.ChatCore.showInChatNotification = function (message) {
+
         // Hiển thị thông báo trong khung chat
         const systemMsg = {
             ChatId: chatId,
@@ -44,7 +45,8 @@
             MessageType: "System",
             Timestamp: new Date().toISOString()
         };
-        appendMessage(systemMsg);
+        console.log("Showing system message in chat:", systemMsg);
+      //  appendMessage(systemMsg);
     };
 
     // Kiểm tra và khởi tạo SignalR
@@ -53,14 +55,18 @@
         .withAutomaticReconnect()
         .build();
 
-    // Xử lý nhận tin nhắn từ SignalR
-    connection.on("ReceiveMessage", function (msg) {
-        console.log("Received message:", msg);
-        if (msg.chatId == chatId) {
-            appendMessage(msg);
+    // Sửa lại
+    connection.on("ReceiveMessage", function (message) {
+        // Thêm điều kiện kiểm tra cả chữ hoa và chữ thường
+        console.log("Message from chat-core:", message);
+        if (message && (message.Content !== undefined || message.content !== undefined)) {
+            // Đảm bảo rằng thuộc tính được truy cập đúng cách
+            console.log("Received message:", message);
+            appendMessage(message);
+        } else {
+            console.warn("Received message with invalid content:", message);
         }
     });
-
     // Xử lý nhận thông báo nhắc nhở
     connection.on("ReminderNotification", function (notification) {
         console.log("Received reminder notification:", notification);

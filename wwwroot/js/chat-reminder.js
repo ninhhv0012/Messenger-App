@@ -505,9 +505,16 @@ window.ChatReminder = (function () {
 
     // Xử lý thông báo nhắc nhở
     function processNotification(data) {
+        console.log("Processing notification:", data);
+
         if (data.type === "reminder_created") {
-            // Hiển thị thông báo nhỏ trong chat
-            window.ChatCore.showInChatNotification(`${data.username} đã tạo nhắc nhở "${data.title}" vào lúc ${window.ChatUtils.formatDateTime(data.reminderTime)}`);
+            // Không làm gì cả - thông báo hệ thống sẽ được gửi qua ReceiveMessage
+            console.log("Reminder created notification received, system message will be displayed separately");
+
+            // HOẶC nếu bạn muốn hiển thị thông báo riêng (không phải tin nhắn),
+            // bạn có thể sử dụng một phương pháp khác như toast notification
+            // ví dụ:
+            // showToastNotification(`${data.username} đã tạo nhắc nhở "${data.title}"`);
         }
         else if (data.type === "reminder_due") {
             console.log("Showing reminder popup for:", data.title);

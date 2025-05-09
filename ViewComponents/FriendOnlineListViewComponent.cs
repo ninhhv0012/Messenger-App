@@ -20,13 +20,14 @@ public class FriendOnlineListViewComponent : ViewComponent
 
         var currentUserId = int.Parse(HttpContext.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")!.Value);
 
+        // Lấy danh sách bạn bè từ cả hai phía của mối quan hệ
         var friends = await _db.Friendships
-            .Where(f => f.Status == 1 && f.UserId == currentUserId)
-            .Include(f => f.FriendUser)
+            .Where(f => f.Status == (int)Messenger_App.Models.FriendshipStatus.Accepted &&
+                  (f.UserId == currentUserId || f.FriendUserId == currentUserId))
             .Select(f => new FriendDto
             {
-                Username = f.FriendUser.Username,
-                LastActive = f.FriendUser.LastActive
+                Username = f.UserId == currentUserId ? f.FriendUser.Username : f.User.Username,
+                LastActive = f.UserId == currentUserId ? f.FriendUser.LastActive : f.User.LastActive
             })
             .OrderByDescending(f => f.LastActive)
             .ToListAsync();
