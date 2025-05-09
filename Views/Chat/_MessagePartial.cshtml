@@ -17,6 +17,7 @@
     {
         var align = m.SenderId == currentUserId ? "justify-content-end" : "justify-content-start";
         var bgClass = m.SenderId == currentUserId ? "bg-primary text-white" : "bg-light";
+        var textClass = m.SenderId == currentUserId ? "text-white" : "";
 
         <div class="d-flex @align mb-2 msg-item" data-timestamp="@m.Timestamp.ToString("o")" data-sender-id="@m.SenderId">
             <div class="p-2 rounded @bgClass" style="max-width:70%;">
@@ -26,11 +27,13 @@
                 }
                 @if (m.MessageType == "Image" && !string.IsNullOrEmpty(m.FilePath))
                 {
-                    <img src="@m.FilePath" alt="Image" class="img-fluid" />
+                    <img src="@m.FilePath" alt="Image" class="img-fluid" style="max-width: 100%;" />
                 }
                 else if (m.MessageType == "File" && !string.IsNullOrEmpty(m.FilePath))
                 {
-                    <a href="@m.FilePath" download>@System.IO.Path.GetFileName(m.FilePath)</a>
+                    <a href="@m.FilePath" download class="@textClass">
+                        <i class="fas fa-file-download me-1"></i>@System.IO.Path.GetFileName(m.FilePath)
+                    </a>
                 }
                 else
                 {

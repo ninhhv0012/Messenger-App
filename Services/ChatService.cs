@@ -126,47 +126,101 @@ VALUES(@c, @u, @m, @t, now());";
 
     public async Task<string> UploadFileAsync(int chatId, int senderId, IFormFile file)
     {
-        var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-        if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
-        var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-        var filePath = Path.Combine(uploads, fileName);
-        await using var fs = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(fs);
-
-        // Ghi message và file metadata
-        await using var conn = Conn(); await conn.OpenAsync();
-        await using var tx = await conn.BeginTransactionAsync();
-
-        const string insMsg = @"
-INSERT INTO messages(chat_id, sender_id, content, message_type, timestamp)
-VALUES(@c, @u, @f, @m, now())
-RETURNING message_id;";
-        int msgId;
-        await using (var cmd = new NpgsqlCommand(insMsg, conn, tx))
+        Console.WriteLine($"UploadFileAsync called: chatId={chatId}, senderId={senderId}, file={file.FileName}, size={file.Length}");
+        try
         {
-            cmd.Parameters.AddWithValue("c", chatId);
-            cmd.Parameters.AddWithValue("u", senderId);
-            cmd.Parameters.AddWithValue("f", fileName);
-            cmd.Parameters.AddWithValue("m", file.ContentType.StartsWith("image/") ? "Image" : "File");
-            msgId = Convert.ToInt32(await cmd.ExecuteScalarAsync()!);
+            // Tạo thư mục uploads nếu chưa tồn tại
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            Console.WriteLine($"Upload directory: {uploads}");
+            if (!Directory.Exists(uploads))
+            {
+                Console.WriteLine("Creating uploads directory");
+                Directory.CreateDirectory(uploads);
+            }
+
+            // Tạo tên file duy nhất
+            var fileNameOnly = Path.GetFileName(file.FileName);
+            var safeFileName = fileNameOnly.Replace(" ", "_").Replace(",", "").Replace("&", "");
+            var uniqueFileName = $"{Guid.NewGuid()}_{safeFileName}";
+            var filePath = Path.Combine(uploads, uniqueFileName);
+
+            Console.WriteLine($"Saving file to: {filePath}");
+
+            // Ghi file vào ổ đĩa
+            await using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+
+            // Xác định loại tin nhắn dựa trên loại file
+            string messageType = file.ContentType.StartsWith("image/") ? "Image" : "File";
+
+            // URL tương đối để truy cập file
+            string fileUrl = $"/uploads/{uniqueFileName}";
+            Console.WriteLine($"File saved with URL: {fileUrl}");
+
+            // Lưu thông tin vào cơ sở dữ liệu
+            await using var conn = Conn();
+            await conn.OpenAsync();
+            await using var tx = await conn.BeginTransactionAsync();
+
+            try
+            {
+                // Tạo tin nhắn mới
+                int messageId;
+                const string insertMessageSql = @"
+                INSERT INTO messages(chat_id, sender_id, content, message_type, timestamp)
+                VALUES(@chatId, @senderId, @content, @messageType, now())
+                RETURNING message_id;";
+
+                await using (var cmd = new NpgsqlCommand(insertMessageSql, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("chatId", chatId);
+                    cmd.Parameters.AddWithValue("senderId", senderId);
+                    cmd.Parameters.AddWithValue("content", fileUrl);
+                    cmd.Parameters.AddWithValue("messageType", messageType);
+                    messageId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                    Console.WriteLine($"Created message with ID: {messageId}");
+                }
+
+                // Lưu metadata của file
+                const string insertFileSql = @"
+                INSERT INTO files(message_id, file_name, file_path, file_type, file_size, uploaded_by, uploaded_at)
+                VALUES(@messageId, @fileName, @filePath, @fileType, @fileSize, @uploadedBy, now());";
+
+                await using (var cmd = new NpgsqlCommand(insertFileSql, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("messageId", messageId);
+                    cmd.Parameters.AddWithValue("fileName", file.FileName);
+                    cmd.Parameters.AddWithValue("filePath", fileUrl);
+                    cmd.Parameters.AddWithValue("fileType", file.ContentType);
+                    cmd.Parameters.AddWithValue("fileSize", file.Length);
+                    cmd.Parameters.AddWithValue("uploadedBy", senderId);
+                    await cmd.ExecuteNonQueryAsync();
+                    Console.WriteLine($"Created file record for message ID: {messageId}");
+                }
+
+                // Commit transaction
+                await tx.CommitAsync();
+                Console.WriteLine("Transaction committed successfully");
+
+                // Trả về URL
+                return fileUrl;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+                await tx.RollbackAsync();
+                throw;
+            }
         }
-        const string insFile = @"
-INSERT INTO files(message_id, file_name, file_path, file_type, file_size, uploaded_by, uploaded_at)
-VALUES(@m, @fn, @fp, @ft, @fs, @ub, now());";
-        await using (var cmd2 = new NpgsqlCommand(insFile, conn, tx))
+        catch (Exception ex)
         {
-            cmd2.Parameters.AddWithValue("m", msgId);
-            cmd2.Parameters.AddWithValue("fn", file.FileName);
-            cmd2.Parameters.AddWithValue("fp", $"/uploads/{fileName}");
-            cmd2.Parameters.AddWithValue("ft", file.ContentType);
-            cmd2.Parameters.AddWithValue("fs", file.Length);
-            cmd2.Parameters.AddWithValue("ub", senderId);
-            await cmd2.ExecuteNonQueryAsync();
+            Console.WriteLine($"Error in UploadFileAsync: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            throw;
         }
-        await tx.CommitAsync();
-        return $"/uploads/{fileName}";
     }
-
     public async Task<int> CreateGroupChatAsync(int ownerId, string groupName, List<int> members)
     {
         await using var conn = Conn();
@@ -256,4 +310,72 @@ SELECT f2.user_id AS user_id, u2.username
         return list;
     }
 
+    public async Task<int> CreateFileMessageAsync(int chatId, int senderId, string fileUrl, string fileName, string contentType, long fileSize)
+    {
+        Console.WriteLine($"CreateFileMessageAsync: chatId={chatId}, senderId={senderId}, fileUrl={fileUrl}");
+
+        await using var conn = Conn();
+        await conn.OpenAsync();
+        await using var tx = await conn.BeginTransactionAsync();
+
+        try
+        {
+            // Xác định loại tin nhắn dựa trên loại file
+            string messageType = contentType.StartsWith("image/") ? "Image" : "File";
+
+            // Tạo tin nhắn mới
+            int messageId;
+            const string insertMessageSql = @"
+            INSERT INTO messages(chat_id, sender_id, content, message_type, timestamp)
+            VALUES(@chatId, @senderId, @content, @messageType, now())
+            RETURNING message_id;";
+
+            await using (var cmd = new NpgsqlCommand(insertMessageSql, conn, tx))
+            {
+                cmd.Parameters.AddWithValue("chatId", chatId);
+                cmd.Parameters.AddWithValue("senderId", senderId);
+                cmd.Parameters.AddWithValue("content", fileUrl);
+                cmd.Parameters.AddWithValue("messageType", messageType);
+                messageId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                Console.WriteLine($"Created message with ID: {messageId}");
+            }
+
+            // Giới hạn độ dài tên file nếu cần
+            if (fileName.Length > 250)
+            {
+                var extension = Path.GetExtension(fileName);
+                fileName = fileName.Substring(0, 240) + extension;
+            }
+
+            // Lưu metadata của file
+            const string insertFileSql = @"
+            INSERT INTO files(message_id, file_name, file_path, file_type, file_size, uploaded_by, uploaded_at)
+            VALUES(@messageId, @fileName, @filePath, @fileType, @fileSize, @uploadedBy, now());";
+
+            await using (var cmd = new NpgsqlCommand(insertFileSql, conn, tx))
+            {
+                cmd.Parameters.AddWithValue("messageId", messageId);
+                cmd.Parameters.AddWithValue("fileName", fileName);
+                cmd.Parameters.AddWithValue("filePath", fileUrl);
+                cmd.Parameters.AddWithValue("fileType", contentType);
+                cmd.Parameters.AddWithValue("fileSize", fileSize);
+                cmd.Parameters.AddWithValue("uploadedBy", senderId);
+                await cmd.ExecuteNonQueryAsync();
+                Console.WriteLine($"Created file record for message ID: {messageId}");
+            }
+
+            // Commit transaction
+            await tx.CommitAsync();
+            Console.WriteLine("Transaction committed successfully");
+
+            return messageId;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database error in CreateFileMessageAsync: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            await tx.RollbackAsync();
+            throw;
+        }
+    }
 }

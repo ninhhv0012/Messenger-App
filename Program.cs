@@ -2,6 +2,7 @@
 using Messenger_App.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,6 +80,24 @@ app.UseRouting();
 
 // Kích hoạt CORS trước xác thực và phân quyền
 app.UseCors("SignalRPolicy");
+
+app.UseStaticFiles();
+
+// Hoặc với cấu hình cụ thể hơn
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads")),
+    RequestPath = "/uploads",
+    OnPrepareResponse = ctx =>
+    {
+        // Cho phép truy cập không hạn chế
+        ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=604800");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+    },
+    ServeUnknownFileTypes = true, // Quan trọng: Phục vụ tất cả các loại file
+    DefaultContentType = "application/octet-stream" // MIME type mặc định cho các file không nhận dạng được
+});
 
 
 app.UseAuthentication();

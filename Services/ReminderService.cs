@@ -201,26 +201,28 @@ public class ReminderService
     }
 
     // Lấy danh sách reminder của một chat với phân trang (sắp xếp theo thời gian tăng dần)
+    // Method in ReminderService.cs to update
+    // This ensures reminders are sorted by reminder_time in descending order
     public async Task<List<Reminder>> GetRemindersByChatPaginatedAsync(int chatId, int pageSize = 10, DateTime? after = null)
     {
         string sql = @"
-        SELECT
-            r.reminder_id,
-            r.user_id,
-            r.chat_id,
-            r.title,
-            r.description,
-            r.reminder_time,
-            r.is_completed,
-            r.created_at,
-            u.username
-        FROM reminders r
-        JOIN users u ON r.user_id = u.user_id
-        WHERE r.chat_id = @chatId
-        AND (@after IS NULL OR r.reminder_time > @after)
-        ORDER BY r.reminder_time ASC
-        LIMIT @pageSize;
-    ";
+    SELECT
+        r.reminder_id,
+        r.user_id,
+        r.chat_id,
+        r.title,
+        r.description,
+        r.reminder_time,
+        r.is_completed,
+        r.created_at,
+        u.username
+    FROM reminders r
+    JOIN users u ON r.user_id = u.user_id
+    WHERE r.chat_id = @chatId
+    AND (@after IS NULL OR r.reminder_time < @after)
+    ORDER BY r.reminder_time DESC
+    LIMIT @pageSize;
+";
 
         await using var conn = Conn();
         await conn.OpenAsync();

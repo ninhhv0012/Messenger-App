@@ -10,7 +10,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="m-0">@chatName</h4>
-    <span id="connection-status" class="badge bg-success">Đã kết nối</span>
+    <span id="connection-status" class="badge bg-secondary">Đang kết nối...</span>
 </div>
 
 <input type="hidden" id="chatId" value="@chatId" />
@@ -30,6 +30,7 @@
             {
                 var align = m.SenderId == currentUserId ? "justify-content-end" : "justify-content-start";
                 var bgClass = m.SenderId == currentUserId ? "bg-primary text-white" : "bg-light";
+                var textClass = m.SenderId == currentUserId ? "text-white" : "";
 
                 <div class="d-flex @align mb-2 msg-item" data-timestamp="@m.Timestamp.ToString("o")" data-sender-id="@m.SenderId">
                     <div class="p-2 rounded @bgClass" style="max-width:70%;">
@@ -39,11 +40,17 @@
                         }
                         @if (m.MessageType == "Image" && !string.IsNullOrEmpty(m.FilePath))
                         {
-                            <img src="@m.FilePath" alt="Image" class="img-fluid" />
+                            <img src="@m.FilePath" alt="Image" class="img-fluid" style="max-width: 100%;" />
                         }
                         else if (m.MessageType == "File" && !string.IsNullOrEmpty(m.FilePath))
                         {
-                            <a href="@m.FilePath" download>@System.IO.Path.GetFileName(m.FilePath)</a>
+                            <a href="@m.FilePath" download class="@textClass">
+                                <i class="fas fa-file-download me-1"></i>@System.IO.Path.GetFileName(m.FilePath)
+                            </a>
+                        }
+                        else if (m.MessageType == "System")
+                        {
+                            <div class="system-message">@Html.Raw(m.Content.Replace("\n", "<br>"))</div>
                         }
                         else
                         {
@@ -55,17 +62,50 @@
         }
     </div>
 </div>
+
+<div class="mt-2 mb-2" id="filePreviewArea" style="display:none;">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span id="selectedFileName">File đã chọn</span>
+            <button type="button" class="btn btn-sm btn-danger" id="removeFile">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="card-body" id="imagePreview" style="display:none; text-align:center;">
+            <img id="previewImg" src="" alt="Preview" class="img-fluid" style="max-height: 200px;" />
+        </div>
+        <div class="card-body" id="fileInfo" style="display:none;">
+            <p class="mb-1">Loại file: <span id="fileType"></span></p>
+            <p class="mb-1">Kích thước: <span id="fileSize"></span></p>
+        </div>
+    </div>
+</div>
+
 <div class="d-flex mt-2">
     <textarea id="txtMessage" class="form-control" placeholder="Nhập tin nhắn..." disabled></textarea>
 </div>
 <div class="d-flex mt-2">
     <button id="btnSend" class="btn btn-primary" disabled>Gửi</button>
-    <input type="file" id="fileInput" class="form-control ms-2" disabled />
+    <div class="input-group ms-2" style="flex: 1;">
+        <input type="file" id="fileInput" class="form-control" disabled />
+        <span class="input-group-text text-muted small">Tối đa 25MB</span>
+    </div>
 </div>
 
-@section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" integrity="sha512-7SRCYIJtR6F8ocwW7UxW6wGKqbSyqREDbfCORCbGLatU0iugBLwyOXpzhkPyHIFdBO0K2VCu57fvP2Twgx1o2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+@* @section Scripts { *@
+@*     <!-- Các script cho chat --> *@
+@*     <script src="~/js/chat-utils.js"></script> *@
+@*     <script src="~/js/chat-file.js"></script> *@
+@*     <script src="~/js/chat-messages.js"></script> *@
+@*     <script src="~/js/chat-reminder.js"></script> *@
+@*     <script src="~/js/chat-core.js"></script> *@
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
-    <script src="~/js/chat.js"></script>
-}
+@*     <script> *@
+@*         // Debug info *@
+@*         console.log("Chat page loaded with: ", { *@
+@*             chatId: '@chatId', *@
+@*             currentUserId: @currentUserId, *@
+@*             chatType: '@chatType' *@
+@*         }); *@
+@*     </script> *@
+@* } *@
