@@ -19,6 +19,13 @@
 <input type="hidden" id="chatType" value="@chatType" />
 
 <div id="detailContainer" style="height:400px;overflow:auto;">
+    <!-- Thêm indicator loading tin nhắn -->
+    <div id="loadingMessages" class="text-center p-2" style="display:none;">
+        <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+        </div>
+        <span class="ms-2">Đang tải tin nhắn cũ...</span>
+    </div>
     <div id="messageList">
         @if (!Model.Any())
         {
@@ -26,39 +33,7 @@
         }
         else
         {
-            foreach (var m in Model)
-            {
-                var align = m.SenderId == currentUserId ? "justify-content-end" : "justify-content-start";
-                var bgClass = m.SenderId == currentUserId ? "bg-primary text-white" : "bg-light";
-                var textClass = m.SenderId == currentUserId ? "text-white" : "";
-
-                <div class="d-flex @align mb-2 msg-item" data-timestamp="@m.Timestamp.ToString("o")" data-sender-id="@m.SenderId">
-                    <div class="p-2 rounded @bgClass" style="max-width:70%;">
-                        @if (chatType == "Group" && m.SenderId != currentUserId)
-                        {
-                            <div><small><strong>@m.SenderUsername</strong></small></div>
-                        }
-                        @if (m.MessageType == "Image" && !string.IsNullOrEmpty(m.FilePath))
-                        {
-                            <img src="@m.FilePath" alt="Image" class="img-fluid" style="max-width: 100%;" />
-                        }
-                        else if (m.MessageType == "File" && !string.IsNullOrEmpty(m.FilePath))
-                        {
-                            <a href="@m.FilePath" download class="@textClass">
-                                <i class="fas fa-file-download me-1"></i>@System.IO.Path.GetFileName(m.FilePath)
-                            </a>
-                        }
-                        else if (m.MessageType == "System")
-                        {
-                            <div class="system-message">@Html.Raw(m.Content.Replace("\n", "<br>"))</div>
-                        }
-                        else
-                        {
-                            <div>@m.Content</div>
-                        }
-                    </div>
-                </div>
-            }
+            @await Html.PartialAsync("_MessagePartial", Model, ViewData)
         }
     </div>
 </div>
@@ -91,21 +66,3 @@
         <span class="input-group-text text-muted small">Tối đa 25MB</span>
     </div>
 </div>
-
-@* @section Scripts { *@
-@*     <!-- Các script cho chat --> *@
-@*     <script src="~/js/chat-utils.js"></script> *@
-@*     <script src="~/js/chat-file.js"></script> *@
-@*     <script src="~/js/chat-messages.js"></script> *@
-@*     <script src="~/js/chat-reminder.js"></script> *@
-@*     <script src="~/js/chat-core.js"></script> *@
-
-@*     <script> *@
-@*         // Debug info *@
-@*         console.log("Chat page loaded with: ", { *@
-@*             chatId: '@chatId', *@
-@*             currentUserId: @currentUserId, *@
-@*             chatType: '@chatType' *@
-@*         }); *@
-@*     </script> *@
-@* } *@

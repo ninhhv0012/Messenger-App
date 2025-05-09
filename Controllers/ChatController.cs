@@ -313,7 +313,9 @@ public class ChatController : Controller
         return Json(new { uploadsExists, canWrite });
     }
 
-    [HttpPost]
+  
+
+    [HttpGet] // Thêm attribute này để chỉ định method hỗ trợ GET
     public async Task<IActionResult> LoadMoreMessages(int chatId, DateTime before)
     {
         var msgs = await _chat.GetMessagesAsync(chatId, 10, before);
