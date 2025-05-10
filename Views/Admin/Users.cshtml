@@ -1,0 +1,153 @@
+﻿@model Messenger_App.ViewModels.Admin.UserListVM
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Quản lý người dùng</h2>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<!-- Tìm kiếm -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form asp-action="Users" method="get" class="row g-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Tìm theo tên đăng nhập hoặc email..."
+                           name="searchTerm" value="@Model.SearchTerm">
+                    <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <a asp-action="Index" asp-controller="Admin" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-tachometer-alt me-1"></i> Quay lại Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sách người dùng -->
+<div class="card">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Danh sách người dùng (@Model.Users.Count)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Email</th>
+                        <th>Ngày tạo</th>
+                        <th>Hoạt động cuối</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Users.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center">Không tìm thấy người dùng nào</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>@user.UserId</td>
+                                <td>@user.Username</td>
+                                <td>@user.Email</td>
+                                <td>@user.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (user.LastActive.HasValue)
+                                    {
+                                        @user.LastActive.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chưa đăng nhập</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-action="UserDetail" asp-route-id="@user.UserId"
+                                       class="btn btn-sm btn-primary">Chi tiết</a>
+                                    <a asp-action="ResetPassword" asp-route-id="@user.UserId"
+                                       class="btn btn-sm btn-warning">Đặt lại mật khẩu</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Phân trang -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    <!-- Nút Previous -->
+                    <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link"
+                           asp-action="Users"
+                           asp-route-page="@(Model.CurrentPage - 1)"
+                           asp-route-searchTerm="@Model.SearchTerm"
+                           asp-route-pageSize="@Model.PageSize">
+                            &laquo;
+                        </a>
+                    </li>
+
+                    <!-- Các trang -->
+                    @{
+                        int startPage = Math.Max(1, Model.CurrentPage - 2);
+                        int endPage = Math.Min(Model.TotalPages, startPage + 4);
+
+                        if (endPage - startPage < 4 && startPage > 1)
+                        {
+                            startPage = Math.Max(1, endPage - 4);
+                        }
+                    }
+
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="Users"
+                               asp-route-page="@i"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-pageSize="@Model.PageSize">
+                                @i
+                            </a>
+                        </li>
+                    }
+
+                    <!-- Nút Next -->
+                    <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link"
+                           asp-action="Users"
+                           asp-route-page="@(Model.CurrentPage + 1)"
+                           asp-route-searchTerm="@Model.SearchTerm"
+                           asp-route-pageSize="@Model.PageSize">
+                            &raquo;
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

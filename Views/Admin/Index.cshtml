@@ -1,0 +1,95 @@
+﻿@model Messenger_App.ViewModels.Admin.DashboardVM
+@{
+    ViewData["Title"] = "Trang quản trị";
+}
+
+<h2 class="mb-4">Bảng điều khiển quản trị</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<!-- Thẻ thống kê -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Tổng người dùng</h6>
+                        <h2 class="mb-0">@Model.TotalUsers</h2>
+                    </div>
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+                <div class="mt-2">
+                    <small>Mới hôm nay: @Model.NewUsersToday</small>
+                </div>
+            </div>
+            <div class="card-footer bg-primary-dark text-white">
+                <a asp-action="Users" class="text-white text-decoration-none">
+                    <i class="fas fa-user-cog me-1"></i> Quản lý người dùng
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-success text-white mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Tin nhắn</h6>
+                        <h2 class="mb-0">@Model.TotalMessages</h2>
+                    </div>
+                    <i class="fas fa-comment-dots fa-2x"></i>
+                </div>
+                <div class="mt-2">
+                    <small>Tổng số cuộc trò chuyện: @Model.TotalChats</small>
+                </div>
+            </div>
+            <div class="card-footer bg-success-dark text-white">
+                <span class="text-white text-decoration-none">
+                    <i class="fas fa-chart-line me-1"></i> Hoạt động hệ thống
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-info text-white mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Người dùng hoạt động</h6>
+                        <h2 class="mb-0">@Model.ActiveUsersToday</h2>
+                    </div>
+                    <i class="fas fa-user-clock fa-2x"></i>
+                </div>
+                <div class="mt-2">
+                    <small>Tổng số kết bạn: @Model.TotalFriendships</small>
+                </div>
+            </div>
+            <div class="card-footer bg-info-dark text-white">
+                <span class="text-white text-decoration-none">
+                    <i class="fas fa-handshake me-1"></i> Kết nối người dùng
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .bg-primary-dark {
+        background-color: #0d6efd;
+    }
+
+    .bg-success-dark {
+        background-color: #157347;
+    }
+
+    .bg-info-dark {
+        background-color: #0dcaf0;
+    }
+</style>

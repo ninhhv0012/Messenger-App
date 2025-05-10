@@ -5,6 +5,16 @@
 
 <h2 class="mb-4 text-center">@ViewData["Title"]</h2>
 
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-danger text-center">@ViewBag.Message</div>
+}
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-warning text-center">@TempData["Message"]</div>
+}
+
 <form asp-action="Login" method="post" class="mx-auto" style="max-width:350px">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 

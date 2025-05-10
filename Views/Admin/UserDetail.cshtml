@@ -1,0 +1,203 @@
+﻿@model Messenger_App.ViewModels.Admin.UserDetailVM
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Chi tiết người dùng: @Model.Username</h2>
+    <div>
+        <a asp-action="Users" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại danh sách
+        </a>
+        <a asp-action="ResetPassword" asp-route-id="@Model.UserId" class="btn btn-warning">
+            <i class="fas fa-key me-1"></i> Đặt lại mật khẩu
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="row">
+    <!-- Thông tin người dùng -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Thông tin tài khoản</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="UserDetail" method="post">
+                    <input type="hidden" asp-for="UserId" />
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">ID:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext" value="@Model.UserId" readonly />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Tên đăng nhập:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext" asp-for="Username" readonly />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Email:</label>
+                        <div class="col-sm-9">
+                            <input type="email" class="form-control" asp-for="Email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Số điện thoại:</label>
+                        <div class="col-sm-9">
+                            <input type="tel" class="form-control" asp-for="Phone" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Trạng thái:</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" asp-for="StatusMessage" rows="2"></textarea>
+                            <span asp-validation-for="StatusMessage" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Ngày tạo:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext"
+                                   value="@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")" readonly />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Cập nhật lần cuối:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext"
+                                   value="@Model.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")" readonly />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Hoạt động cuối:</label>
+                        <div class="col-sm-9">
+                            @if (Model.LastActive.HasValue)
+                            {
+                                <input type="text" class="form-control-plaintext"
+                                       value="@Model.LastActive.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")" readonly />
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa đăng nhập</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quản lý quyền -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Quản lý quyền</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="UpdateRoles" method="post">
+                    <input type="hidden" name="userId" value="@Model.UserId" />
+
+                    <div class="mb-3">
+                        <label class="form-label d-block fw-bold">Các vai trò hiện tại:</label>
+                        @if (Model.CurrentRoles.Any())
+                        {
+                            foreach (var role in Model.CurrentRoles)
+                            {
+                                <span class="badge bg-primary me-1">@role</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">Không có vai trò</span>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Gán vai trò:</label>
+                        @foreach (var role in Model.AllRoles)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="selectedRoles" value="@role.RoleId"
+                                       id="role-@role.RoleId" @(role.IsAssigned ? "checked" : "") />
+                                <label class="form-check-label" for="role-@role.RoleId">
+                                    @role.RoleName
+                                </label>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-tag me-1"></i> Cập nhật vai trò
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quản lý tài khoản -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Quản lý tài khoản</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="ToggleUserStatus" method="post">
+                    <input type="hidden" name="userId" value="@Model.UserId" />
+                    <div class="d-grid mb-3">
+                        @if (Model.StatusMessage?.Contains("[LOCKED]") == true)
+                        {
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-unlock me-1"></i> Mở khóa tài khoản
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-lock me-1"></i> Khóa tài khoản
+                            </button>
+                        }
+                    </div>
+                </form>
+
+                <a asp-action="ResetPassword" asp-route-id="@Model.UserId" class="btn btn-warning d-block">
+                    <i class="fas fa-key me-1"></i> Đặt lại mật khẩu
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

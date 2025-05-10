@@ -54,6 +54,7 @@ builder.Services.AddSignalR(options =>
 
 // Đăng ký LastActiveActionFilter
 builder.Services.AddScoped<Messenger_App.Filters.LastActiveActionFilter>();
+builder.Services.AddScoped<Messenger_App.Filters.CheckAccountLockedFilter>();
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.AddService<Messenger_App.Filters.LastActiveActionFilter>();
@@ -114,6 +115,11 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
+    name: "admin",
+    pattern: "admin/{action=Index}/{id?}",
+    defaults: new { controller = "Admin" });
 
 // Cấu hình SignalR hub
 app.MapHub<ChatHub>("/chathub");

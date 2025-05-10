@@ -7,8 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Messenger_App.Filters;
 
 namespace Messenger_App.Controllers
@@ -27,6 +25,8 @@ namespace Messenger_App.Controllers
         public abstract class BaseController : Controller
         {
         }
+
+        private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         /* ---------- ĐĂNG KÝ ---------- */
         [HttpGet]
@@ -78,14 +78,17 @@ namespace Messenger_App.Controllers
 
             await tx.CommitAsync();
 
-
-
-
             return RedirectToAction(nameof(Login));
         }
+
         [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
+        public IActionResult Login(string? returnUrl = null, string? message = null)
         {
+            if (!string.IsNullOrEmpty(message))
+            {
+                ViewBag.Message = message;
+            }
+
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
@@ -104,14 +107,21 @@ namespace Messenger_App.Controllers
                 return View(vm);
             }
 
+            // Kiểm tra xem tài khoản có bị khóa không
+            if (user.StatusMessage?.Contains("[LOCKED]") == true)
+            {
+                ModelState.AddModelError("", "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+                return View(vm);
+            }
+
             user.LastActive = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
             var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new(ClaimTypes.Name, user.Username)
-        };
+            {
+                new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new(ClaimTypes.Name, user.Username)
+            };
 
             var roles = await _db.UserRoles.Where(ur => ur.UserId == user.UserId)
                                            .Select(ur => ur.Role.RoleName)
@@ -127,15 +137,22 @@ namespace Messenger_App.Controllers
         }
 
         /* ---------- Logout ---------- */
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> Logout(string? message = null)
         {
             await HttpContext.SignOutAsync();
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                TempData["Message"] = message;
+            }
+
             return RedirectToAction(nameof(Login));
         }
 
         /* ---------- Profile ---------- */
         [Authorize]
         [HttpGet]
+        [ServiceFilter(typeof(CheckAccountLockedFilter))]
         public async Task<IActionResult> Profile()
         {
             var uid = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -152,6 +169,7 @@ namespace Messenger_App.Controllers
         }
 
         [Authorize, HttpPost]
+        [ServiceFilter(typeof(CheckAccountLockedFilter))]
         public async Task<IActionResult> Profile(ProfileVM vm)
         {
             if (!ModelState.IsValid) return View(vm);
@@ -172,9 +190,11 @@ namespace Messenger_App.Controllers
 
         /* ---------- Change Password (optional) ---------- */
         [Authorize]
+        [ServiceFilter(typeof(CheckAccountLockedFilter))]
         [HttpGet] public IActionResult ChangePassword() => View();
 
         [Authorize]
+        [ServiceFilter(typeof(CheckAccountLockedFilter))]
         [HttpPost]
         public async Task<IActionResult> ChangePassword(ChangePasswordVM vm)
         {
@@ -196,7 +216,5 @@ namespace Messenger_App.Controllers
             TempData["PwdChanged"] = true;
             return RedirectToAction(nameof(Profile));
         }
-
-
     }
 }
