@@ -52,6 +52,13 @@ builder.Services.AddSignalR(options =>
     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
 });
 
+// Đăng ký LastActiveActionFilter
+builder.Services.AddScoped<Messenger_App.Filters.LastActiveActionFilter>();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.AddService<Messenger_App.Filters.LastActiveActionFilter>();
+});
+
 // Cấu hình xác thực Cookie
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>

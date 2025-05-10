@@ -8,6 +8,7 @@ using Messenger_App.Models;
 using Messenger_App.Hubs;
 using System.Data;
 using Npgsql;
+using Messenger_App.Filters;
 
 namespace Messenger_App.Controllers;
 
@@ -27,6 +28,13 @@ public class ChatController : Controller
         _logger = logger;
     }
 
+
+
+    [UpdateLastActive]
+    public abstract class BaseController : Controller
+    {
+    }
+
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     private string CurrentUsername => User.Identity?.Name ?? "Người dùng";
 
@@ -44,6 +52,8 @@ public class ChatController : Controller
         }).ToList();
         return View(vms);
     }
+
+
 
     [HttpGet]
     public async Task<IActionResult> Detail(int id)

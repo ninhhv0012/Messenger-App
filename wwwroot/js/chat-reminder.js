@@ -7,8 +7,6 @@ window.ChatReminder = (function () {
     let currentUserId;
     let currentUsername;
     let isLoadingReminders = false;
-    let noMoreReminders = false;
-    let lastReminderTime = null;
 
     // Khởi tạo module
     function init(id, userId, username) {
@@ -112,8 +110,12 @@ window.ChatReminder = (function () {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
+                            <div id="reminderLoadingIndicator" class="text-center mb-3">
+          
+                                <p class="mt-2">Đang tải danh sách nhắc nhở...</p>
+                            </div>
                             <div id="remindersList" style="max-height: 400px; overflow-y: auto;">
-                                <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>
+                                <!-- Nội dung sẽ được thêm vào đây -->
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -151,25 +153,6 @@ window.ChatReminder = (function () {
 
         // Debug - kiểm tra xem nút xem nhắc nhở có sự kiện click không
         console.log("View reminders button has click event: " + ($._data && $('#btnViewReminders').length > 0 ? "Yes" : "No"));
-    }
-
-    // Thiết lập sự kiện cuộn để tải thêm reminder
-    function setupReminderScroll() {
-        // Xóa sự kiện cuộn cũ nếu có
-        $('#remindersList').off('scroll');
-
-        // Thêm sự kiện cuộn mới
-        $('#remindersList').on('scroll', function () {
-            const scrollTop = $(this).scrollTop();
-            const scrollHeight = $(this)[0].scrollHeight;
-            const clientHeight = $(this).outerHeight();
-
-            // Nếu đã cuộn đến gần cuối (còn cách cuối 50px)
-            if (scrollTop + clientHeight >= scrollHeight - 50) {
-                // Tải thêm reminder
-                loadMoreReminders();
-            }
-        });
     }
 
     // Hiển thị modal tạo reminder
@@ -219,62 +202,25 @@ window.ChatReminder = (function () {
             const viewRemindersModalEl = document.getElementById('viewRemindersModal');
             if (!viewRemindersModalEl) {
                 console.error("Cannot find viewRemindersModal element");
-
-                // Nếu không có, thử tạo lại
-                if ($('#viewRemindersModal').length === 0) {
-                    const viewModalHtml = `
-                    <div class="modal fade" id="viewRemindersModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Danh sách nhắc nhở</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div id="remindersList" style="max-height: 400px; overflow-y: auto;">
-                                        <p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-
-                    $('body').append(viewModalHtml);
-                    console.log("View reminders modal dynamically created");
-                }
+                return;
             }
 
-            // Reset trạng thái
+            // Reset trạng thái và hiển thị loading
             isLoadingReminders = false;
-            noMoreReminders = false;
-            lastReminderTime = null;
+            $('#remindersList').empty(); // Xóa nội dung cũ
+            $('#reminderLoadingIndicator').show(); // Hiển thị indicator loading
 
-            // Xóa dữ liệu cũ và hiển thị trạng thái loading
-            $('#remindersList').html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>');
-
-            // Kiểm tra xem API endpoint có tồn tại không trước khi tải reminders
-            console.log("Checking if reminder endpoint exists before loading");
-
-            // Hiển thị modal trước để người dùng thấy spinner loading
-            try {
-                const modal = new bootstrap.Modal(document.getElementById('viewRemindersModal'));
-                modal.show();
-                console.log("View reminders modal shown, now loading data");
-            } catch (modalError) {
-                console.error("Error showing view reminders modal:", modalError);
-            }
+            // Hiển thị modal
+            const modal = new bootstrap.Modal(viewRemindersModalEl);
+            modal.show();
+            console.log("View reminders modal shown, now loading data");
 
             // Tải danh sách reminder
-            loadReminders(function () {
-                console.log("Reminders loaded successfully, setting up scroll");
-                // Thiết lập sự kiện cuộn
-                setupReminderScroll();
-            });
+            loadAllReminders();
         } catch (error) {
             console.error("Error in showViewRemindersModal:", error);
+            $('#reminderLoadingIndicator').hide();
+            $('#remindersList').html('<div class="alert alert-danger">Có lỗi khi hiển thị modal. Vui lòng thử lại.</div>');
         }
     }
 
@@ -333,174 +279,188 @@ window.ChatReminder = (function () {
         }
     }
 
-    // Tải danh sách reminder
-    function loadReminders(callback) {
-        console.log("Loading reminders for chat:", chatId);
-
-        // Reset trạng thái
-        isLoadingReminders = false; // Set to false first so loadMoreReminders will execute
-        noMoreReminders = false;
-        lastReminderTime = null;
-
-        // Gọi hàm tải trang đầu tiên (chỉ thị với tham số true là load lần đầu)
-        loadMoreReminders(callback, true);
-    }
-
-    // Tải thêm reminder
-    function loadMoreReminders(callback, isInitialLoad) {
-        // Skip only if we're not doing the initial load and already loading or no more reminders
-        if (!isInitialLoad && (isLoadingReminders || noMoreReminders)) {
-            console.log("Skipping loadMoreReminders due to already loading or no more reminders");
+    // Tải tất cả reminder
+    function loadAllReminders() {
+        if (isLoadingReminders) {
+            console.log("Already loading reminders, skipping request");
             return;
         }
 
-        console.log("Actually loading reminders, isInitialLoad:", isInitialLoad);
+        const currentChatId = chatId || $('#chatId').val(); // Đảm bảo luôn có chatId
+        console.log("Loading all reminders for chat:", currentChatId);
+
         isLoadingReminders = true;
-        console.log("Loading more reminders, last time:", lastReminderTime);
-
-        // Thêm chỉ báo đang tải nếu chưa có
-        if (!$('#reminderLoadingIndicator').length) {
-            $('#remindersList').append('<div id="reminderLoadingIndicator" class="text-center my-2"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>');
-        }
-
-        // Tạo URL với tham số after nếu có
-        let url = `/Reminder/GetChatRemindersPaginated?chatId=${chatId}`;
-        if (lastReminderTime) {
-            // Ensure the timestamp is in ISO format with 'Z' to indicate UTC
-            // The server expects a proper ISO 8601 UTC timestamp
-            try {
-                // Try to parse the timestamp if it's not already a Date object
-                let reminderDate = lastReminderTime;
-                if (!(lastReminderTime instanceof Date)) {
-                    reminderDate = new Date(lastReminderTime);
-                }
-                // Ensure it's a valid date
-                if (!isNaN(reminderDate.getTime())) {
-                    // Convert to ISO string which will be in UTC format with Z suffix
-                    url += `&after=${encodeURIComponent(reminderDate.toISOString())}`;
-                    console.log("Formatted after parameter as UTC ISO string:", reminderDate.toISOString());
-                } else {
-                    console.error("Invalid timestamp for after parameter:", lastReminderTime);
-                    // Fall back to original value if parsing fails
-                    url += `&after=${encodeURIComponent(lastReminderTime)}`;
-                }
-            } catch (err) {
-                console.error("Error formatting timestamp:", err);
-                // Fall back to original value if parsing fails
-                url += `&after=${encodeURIComponent(lastReminderTime)}`;
-            }
-        }
-
-        // Debug: show the full URL being used
-        console.log("Full AJAX request URL:", url);
 
         $.ajax({
-            url: url,
-            type: 'GET',
-            dataType: 'json',
-            beforeSend: function () {
-                console.log("AJAX request starting for reminders");
-            },
-            success: function (reminders) {
-                console.log("Reminders loaded successfully:", reminders);
+            url: `/Reminder/GetChatReminders?chatId=${currentChatId}`,
+            type: "GET",
+            success: function (data) {
+                console.log("Reminders loaded successfully:", data);
 
-                // Xóa chỉ báo đang tải
-                $('#reminderLoadingIndicator').remove();
+                // Luôn ẩn loading indicator khi đã load xong
+                $('#reminderLoadingIndicator').hide();
+                isLoadingReminders = false;
 
-                if (!reminders || reminders.length === 0) {
-                    // Không còn reminder nào
-                    noMoreReminders = true;
-
-                    if (!lastReminderTime) {
-                        // Nếu là lần tải đầu tiên và không có reminder nào
-                        $('#remindersList').html('<p class="text-muted text-center">Không có nhắc nhở nào.</p>');
-                    } else {
-                        // Nếu đã tải một số reminder trước đó
-                        $('#remindersList').append('<p class="text-center text-muted my-2">Không còn nhắc nhở nào.</p>');
-                    }
+                if (!data || data.length === 0) {
+                    // Không có reminder nào
+                    $('#remindersList').html('<p class="text-center text-muted">Không có nhắc nhở nào</p>');
                 } else {
-                    // Nếu là lần tải đầu tiên, khởi tạo bảng
-                    if (!lastReminderTime) {
-                        let tableHtml = '<div class="table-responsive"><table class="table table-hover">';
-                        tableHtml += '<thead><tr><th>Tiêu đề</th><th>Mô tả</th><th>Thời gian</th><th>Người tạo</th><th>Trạng thái</th></tr></thead>';
-                        tableHtml += '<tbody id="reminderTableBody"></tbody></table></div>';
-                        $('#remindersList').html(tableHtml);
-                    }
-
-                    // Thêm các reminder mới vào bảng
-                    let tableBody = '';
-
-                    reminders.forEach(function (reminder) {
-                        // Lưu thời gian của reminder cuối cùng để dùng cho lần tải kế tiếp
-                        // Convert to proper Date object instead of storing the string representation
-                        if (reminder.ReminderTime) {
-                            try {
-                                // Convert to Date object to ensure proper ISO string formatting later
-                                lastReminderTime = new Date(reminder.ReminderTime);
-                                console.log("Stored lastReminderTime as Date object:", lastReminderTime);
-                            } catch (error) {
-                                console.error("Error parsing ReminderTime as Date:", error);
-                                // Keep the string representation as fallback
-                                lastReminderTime = reminder.ReminderTime;
-                                console.log("Stored lastReminderTime as string:", lastReminderTime);
-                            }
-                        }
-
-                        // Xử lý trạng thái
-                        const isCompleted = reminder.IsCompleted;
-                        const isPast = new Date(reminder.ReminderTime) < new Date();
-                        const status = isCompleted ? 'Đã hoàn thành' : (isPast ? 'Đã qua' : 'Sắp tới');
-                        const statusClass = isCompleted ? 'success' : (isPast ? 'secondary' : 'warning');
-
-                        // Xử lý hiển thị thời gian
-                        const timeFormatted = window.ChatUtils.formatDateTime(reminder.ReminderTime);
-
-                        // Xử lý username
-                        const username = reminder.User && reminder.User.Username
-                            ? reminder.User.Username
-                            : `User ID: ${reminder.UserId}`;
-
-                        tableBody += `<tr>
-                            <td>${reminder.Title || ''}</td>
-                            <td>${reminder.Description || ''}</td>
-                            <td>${timeFormatted}</td>
-                            <td>${username}</td>
-                            <td><span class="badge bg-${statusClass}">${status}</span></td>
-                        </tr>`;
-                    });
-
-                    $('#reminderTableBody').append(tableBody);
-                }
-
-                if (callback && typeof callback === 'function') {
-                    console.log("Executing callback after loading reminders");
-                    callback();
+                    // Hiển thị danh sách nhắc nhở
+                    renderReminders(data);
                 }
             },
             error: function (xhr, status, error) {
                 console.error("Error loading reminders. Status:", status);
                 console.error("Error details:", error);
                 console.error("Response:", xhr.responseText);
-                $('#reminderLoadingIndicator').remove();
 
-                if (!lastReminderTime) {
-                    // Nếu là lần tải đầu tiên
-                    $('#remindersList').html('<p class="text-danger text-center">Lỗi khi tải danh sách nhắc nhở.</p>');
-                } else {
-                    // Nếu đã tải một số reminder trước đó
-                    $('#remindersList').append('<p class="text-center text-danger my-2">Lỗi khi tải thêm nhắc nhở.</p>');
-                }
-
-                if (callback && typeof callback === 'function') {
-                    console.log("Executing callback after reminder loading error");
-                    callback();
-                }
-            },
-            complete: function () {
-                console.log("AJAX request completed (success or error)");
+                // Luôn ẩn loading indicator khi có lỗi
+                $('#reminderLoadingIndicator').hide();
                 isLoadingReminders = false;
+
+                // Hiển thị thông báo lỗi
+                $('#remindersList').html(`
+                    <div class="alert alert-danger">
+                        <p class="mb-0">Không thể tải danh sách nhắc nhở. Vui lòng thử lại sau.</p>
+                        <small>${error}</small>
+                    </div>
+                `);
             }
         });
+    }
+
+    // Hàm render danh sách nhắc nhở
+    function renderReminders(reminders) {
+        console.log("Rendering reminders:", reminders);
+
+        if (!reminders || reminders.length === 0) {
+            $('#remindersList').html('<p class="text-center text-muted">Không có nhắc nhở nào</p>');
+            return;
+        }
+
+        try {
+            // Sắp xếp nhắc nhở theo thời gian giảm dần (mới nhất lên đầu)
+            reminders.sort((a, b) => new Date(b.ReminderTime) - new Date(a.ReminderTime));
+
+            let html = '';
+
+            reminders.forEach(function (reminder) {
+                if (!reminder) {
+                    console.error("Found null/undefined reminder in data");
+                    return; // Skip this iteration
+                }
+
+                // Đảm bảo các trường cần thiết tồn tại
+                const title = reminder.Title || "Không có tiêu đề";
+                const reminderId = reminder.ReminderId || 0;
+                const description = reminder.Description || "";
+                const isCompleted = reminder.IsCompleted || false;
+
+                // Xử lý an toàn cho thời gian
+                let localTimeStr = "Không xác định";
+                try {
+                    if (reminder.ReminderTime) {
+                        const reminderTime = new Date(reminder.ReminderTime);
+                        if (!isNaN(reminderTime.getTime())) { // Kiểm tra xem thời gian có hợp lệ không
+                            localTimeStr = reminderTime.toLocaleString('vi-VN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error formatting date for reminder:", reminder.reminderId, error);
+                }
+
+                // Xử lý an toàn cho username
+                let username = "Không rõ";
+                try {
+                    if (reminder.User && reminder.User.Username) {
+                        username = reminder.User.Username;
+                    } else if (reminder.userName) {
+                        username = reminder.userName;
+                    }
+                } catch (error) {
+                    console.error("Error extracting username for reminder:", reminder.ReminderId, error);
+                }
+
+                // Định dạng trạng thái nhắc nhở
+                const now = new Date();
+                let reminderTime = null;
+                try {
+                    reminderTime = new Date(reminder.ReminderTime);
+                } catch (e) {
+                    console.error("Invalid date:", reminder.ReminderTime);
+                }
+
+                const statusClass = isCompleted
+                    ? 'bg-success'
+                    : (reminderTime && now > reminderTime ? 'bg-danger' : 'bg-warning');
+                const statusText = isCompleted
+                    ? 'Đã hoàn thành'
+                    : (reminderTime && now > reminderTime ? 'Đã qua' : 'Sắp tới');
+
+                html += `
+                <div class="card mb-3 reminder-item" data-id="${reminderId}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">${title}</span>
+                        <span class="badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="card-body">
+                        ${description ? `<p class="card-text">${description}</p>` : ''}
+                        <p class="card-text text-muted mb-1">
+                            <small>Thời gian: ${localTimeStr}</small>
+                        </p>
+                        <p class="card-text text-muted mb-0">
+                            <small>Người tạo: ${username}</small>
+                        </p>
+                    </div>
+                    ${!isCompleted ? `
+                    <div class="card-footer text-end">
+                        <button class="btn btn-sm btn-success js-complete-reminder" data-id="${reminderId}">
+                            <i class="fas fa-check me-1"></i> Đánh dấu hoàn thành
+                        </button>
+                    </div>` : ''}
+                </div>
+                `;
+            });
+
+            // Hiển thị danh sách
+            $('#remindersList').html(html);
+
+            // Thêm event listener cho nút đánh dấu hoàn thành
+            $('.js-complete-reminder').on('click', function () {
+                const reminderId = $(this).data('id');
+                markReminderCompleted(reminderId);
+            });
+        } catch (error) {
+            console.error("Error rendering reminders:", error);
+            $('#remindersList').html(`
+                <div class="alert alert-danger">
+                    <p class="mb-0">Có lỗi khi hiển thị danh sách nhắc nhở.</p>
+                    <small>${error.message}</small>
+                </div>
+            `);
+        }
+    }
+
+    // Đánh dấu reminder đã hoàn thành
+    function markReminderCompleted(reminderId) {
+        console.log("Marking reminder as completed:", reminderId);
+
+        $.post('/Reminder/MarkCompleted', { reminderId: reminderId })
+            .done(function () {
+                console.log("Reminder marked as completed successfully");
+                // Reload danh sách để cập nhật UI
+                loadAllReminders();
+            })
+            .fail(function (error) {
+                console.error("Error marking reminder as completed:", error);
+                alert("Không thể đánh dấu nhắc nhở đã hoàn thành. Vui lòng thử lại sau.");
+            });
     }
 
     // Xử lý thông báo nhắc nhở
@@ -510,11 +470,6 @@ window.ChatReminder = (function () {
         if (data.type === "reminder_created") {
             // Không làm gì cả - thông báo hệ thống sẽ được gửi qua ReceiveMessage
             console.log("Reminder created notification received, system message will be displayed separately");
-
-            // HOẶC nếu bạn muốn hiển thị thông báo riêng (không phải tin nhắn),
-            // bạn có thể sử dụng một phương pháp khác như toast notification
-            // ví dụ:
-            // showToastNotification(`${data.username} đã tạo nhắc nhở "${data.title}"`);
         }
         else if (data.type === "reminder_due") {
             console.log("Showing reminder popup for:", data.title);
@@ -635,9 +590,8 @@ window.ChatReminder = (function () {
     // Public API
     return {
         init: init,
-        loadReminders: loadReminders,
+        loadAllReminders: loadAllReminders,
         processNotification: processNotification,
-        // Thêm hàm để debug
         showViewRemindersModal: showViewRemindersModal
     };
 })();

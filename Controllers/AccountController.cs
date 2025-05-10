@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using Messenger_App.Filters;
 
 namespace Messenger_App.Controllers
 {
@@ -20,6 +21,11 @@ namespace Messenger_App.Controllers
         public AccountController(AppDbContext db, IPasswordHasher<User> hasher)
         {
             _db = db; _hasher = hasher;
+        }
+
+        [UpdateLastActive]
+        public abstract class BaseController : Controller
+        {
         }
 
         /* ---------- ĐĂNG KÝ ---------- */

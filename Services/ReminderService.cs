@@ -203,6 +203,7 @@ public class ReminderService
     // Lấy danh sách reminder của một chat với phân trang (sắp xếp theo thời gian tăng dần)
     // Method in ReminderService.cs to update
     // This ensures reminders are sorted by reminder_time in descending order
+    // This method needs to be updated in your ReminderService.cs file
     public async Task<List<Reminder>> GetRemindersByChatPaginatedAsync(int chatId, int pageSize = 10, DateTime? after = null)
     {
         string sql = @"
@@ -230,8 +231,22 @@ public class ReminderService
         await using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("chatId", chatId);
         cmd.Parameters.AddWithValue("pageSize", pageSize);
+
+        // Fix: Ensure the after parameter is in UTC format
         var afterParam = cmd.Parameters.Add("after", NpgsqlTypes.NpgsqlDbType.TimestampTz);
-        afterParam.Value = after.HasValue ? after.Value : (object)DBNull.Value;
+        if (after.HasValue)
+        {
+            // Convert to UTC if it's not already
+            if (after.Value.Kind != DateTimeKind.Utc)
+            {
+                after = DateTime.SpecifyKind(after.Value, DateTimeKind.Utc);
+            }
+            afterParam.Value = after.Value;
+        }
+        else
+        {
+            afterParam.Value = DBNull.Value;
+        }
 
         var reminders = new List<Reminder>();
         await using var reader = await cmd.ExecuteReaderAsync();
@@ -250,7 +265,7 @@ public class ReminderService
                 CreatedAt = reader.GetDateTime(7)
             };
 
-            // Tạo đối tượng User
+            // Create User object
             reminder.User = new User
             {
                 UserId = reminder.UserId,

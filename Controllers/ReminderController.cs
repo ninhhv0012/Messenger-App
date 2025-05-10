@@ -120,6 +120,7 @@ public class ReminderController : Controller
     }
 
     // API lấy danh sách reminder theo trang
+    // Update this method in your ReminderController.cs
     [HttpGet]
     public async Task<IActionResult> GetChatRemindersPaginated(int chatId, string? after = null)
     {
@@ -128,7 +129,8 @@ public class ReminderController : Controller
             DateTime? afterTime = null;
             if (!string.IsNullOrEmpty(after))
             {
-                afterTime = DateTime.Parse(after);
+                // Parse the ISO 8601 date string and ensure it's treated as UTC
+                afterTime = DateTime.Parse(after).ToUniversalTime();
             }
 
             var reminders = await _reminderService.GetRemindersByChatPaginatedAsync(chatId, 10, afterTime);

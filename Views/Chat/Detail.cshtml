@@ -66,3 +66,28 @@
         <span class="input-group-text text-muted small">Tối đa 25MB</span>
     </div>
 </div>
+
+<!-- Thêm HTML này vào file view Detail.cshtml hoặc một partial view -->
+<!-- Modal Xem Nhắc Nhở -->
+<div class="modal fade" id="viewRemindersModal" tabindex="-1" aria-labelledby="viewRemindersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewRemindersModalLabel">Danh sách nhắc nhở</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Loading indicator tách biệt -->
+    
+
+                <!-- Danh sách nhắc nhở -->
+                <div id="remindersList" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Nội dung sẽ được thêm vào đây -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>

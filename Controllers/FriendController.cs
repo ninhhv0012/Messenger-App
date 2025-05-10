@@ -4,6 +4,7 @@ using Messenger_App;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Messenger_App.Filters;
 
 [Authorize]
 public class FriendController : Controller
@@ -11,6 +12,12 @@ public class FriendController : Controller
     private readonly AppDbContext _db;
     private int CurrentUserId => int.Parse(User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")!.Value);
 
+
+
+    [UpdateLastActive]
+    public abstract class BaseController : Controller
+    {
+    }
     public FriendController(AppDbContext db) { _db = db; }
 
     // ---------- Trang tổng ----------
